@@ -1,0 +1,164 @@
+//plugins {
+//    id 'java-library'
+////    id 'org.springframework.boot' version '3.1.4'
+////    id 'io.spring.dependency-management' version '1.1.3'
+//}
+//
+//group = 'com'
+//version = '0.0.1-SNAPSHOT'
+//
+//java {
+//    toolchain {
+//        languageVersion = JavaLanguageVersion.of(21)
+//    }
+//}
+//
+//repositories {
+//    mavenCentral()
+//}
+//
+//dependencies {
+//    implementation 'org.springframework.boot:spring-boot-starter-data-jpa:3.1.4'
+//    compileOnly 'org.projectlombok:lombok:1.18.32'
+//    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+//    runtimeOnly 'org.postgresql:postgresql:42.6.0'
+//    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.1.4'
+//    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+//
+//}
+//
+//tasks.jar {
+//    archiveBaseName.set("Shared_Persistence")
+//    enabled = true
+//}
+//plugins {
+//    id 'java-library'
+//}
+//
+//group = 'com.example'
+//version = '0.0.1-SNAPSHOT'
+//
+//java {
+//    toolchain {
+//        languageVersion = JavaLanguageVersion.of(21)
+//    }
+//}
+//
+//repositories {
+//    mavenCentral()
+//}
+//
+//dependencies {
+//    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+//    compileOnly 'org.projectlombok:lombok:1.18.30'
+//    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+//    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+//}
+//
+//
+//
+//tasks.jar {
+//    archiveBaseName.set("Shared_Persistence")
+//    enabled = true
+//}
+//
+//tasks.named('test') {
+//    useJUnitPlatform()
+//}
+
+
+//plugins {
+//        id 'java-library'
+//        id 'io.spring.dependency-management'
+//    }
+//
+//
+//
+//group = 'com'
+//version = '0.0.1-SNAPSHOT'
+//description = 'share-persistence'
+//
+//java {
+//    toolchain {
+//        languageVersion = JavaLanguageVersion.of(21)
+//    }
+//}
+//
+//configurations {
+//    compileOnly {
+//        extendsFrom annotationProcessor
+//    }
+//}
+//
+//repositories {
+//    mavenCentral()
+//}
+//
+//dependencies {
+//    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+//    implementation 'org.springframework.boot:spring-boot-starter-web'
+//    compileOnly 'org.projectlombok:lombok:1.18.30'
+//    runtimeOnly 'org.postgresql:postgresql'
+//    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+//    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+//    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+//}
+//
+//tasks.named('test') {
+//    useJUnitPlatform()
+//}
+//
+//tasks.named('bootJar') {
+//    enabled = false
+//}
+//tasks.withType(Test) {
+//    enabled = false
+//}
+//tasks.named('jar') {
+//    enabled = true
+//}
+
+
+plugins {
+    id 'java-library'                          // Library module
+    id 'io.spring.dependency-management'
+}
+
+group = 'com.hotelmanagement'
+version = '1.0.0'
+description = 'Shared Persistence Layer'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // JPA / Persistence dependencies
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+
+    // Lombok for convenience
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+
+    // Optional: Spring Data JPA for repositories
+    implementation 'org.springframework.data:spring-data-jpa:3.1.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+}
+
+// Use the default JAR task (no bootJar here)
+tasks.named('jar') {
+    enabled = true
+}
+
+// Optional: Enable tests
+tasks.test {
+    useJUnitPlatform()
+}

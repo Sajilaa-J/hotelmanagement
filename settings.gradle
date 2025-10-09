@@ -1,0 +1,9 @@
+rootProject.name = 'hotelmanagement'
+
+include 'Shared_Persistence'
+include 'User_Service'
+include 'Room_Service'
+include 'Booking_Service'
+include 'Payment_Service'
+include 'Email_Service'
+include 'ReviewAndRatings_Service'
