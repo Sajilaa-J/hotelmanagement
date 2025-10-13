@@ -9,6 +9,10 @@ import com.shared_persistence.entity.User;
 import com.shared_persistence.repo.BookingRepository;
 import com.shared_persistence.repo.RoomRepository;
 import com.shared_persistence.repo.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,15 +22,29 @@ import java.util.stream.Collectors;
 @Service
 public class BookingService {
 
+
+    @Qualifier("applicationTaskExecutor")
+    @Autowired
+    private final TaskExecutor taskExecutor;
+
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
     private final RoomClient roomClient;
-    public BookingService(BookingRepository bookingRepository, UserRepository userRepository, RoomRepository roomRepository, RoomClient roomClient) {
+
+    @Autowired
+    public BookingService(
+            BookingRepository bookingRepository,
+            UserRepository userRepository,
+            RoomRepository roomRepository,
+            RoomClient roomClient,
+            @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor
+    ) {
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
-        this.roomClient=roomClient;
+        this.roomClient = roomClient;
+        this.taskExecutor = taskExecutor;
     }
 
 

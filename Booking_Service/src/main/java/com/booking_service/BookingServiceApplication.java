@@ -16,7 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EntityScan(basePackages = "com.shared_persistence.entity")
 @EnableFeignClients(basePackages = "com.booking_service.client")
 @EnableScheduling
-@EnableAsync
+//@EnableAsync
 public class BookingServiceApplication {
 
     public static void main(String[] args) {

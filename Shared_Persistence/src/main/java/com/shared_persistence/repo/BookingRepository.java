@@ -13,7 +13,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUser(User user);
 
     Optional<Booking> findById(Long id);
-    List<Booking> findAllByCheckOutDateBeforeAndStatus(LocalDate date, String status);
+    List<Booking> findByCheckOutDateBefore(LocalDate date);
 
 }
 
