@@ -64,16 +64,12 @@ package com.room_service.security;
 //
 
 
-import com.shared_persistence.entity.User;
-
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 
@@ -133,4 +129,19 @@ public class JwtUtil {
             return false;
         }
     }
+
+
+    public String generateToken() {
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+
+        return Jwts.builder()
+                .setSubject("SYSTEM")
+                .claim("role", "ROLE_ADMIN")
+                .setIssuedAt(now)
+                .setExpiration(new Date(nowMillis + jwtExpirationMs))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
 }

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -15,7 +16,7 @@ public class RoomService {
     @Autowired
     private RoomRepository roomRepository;
 
-    // Convert entity to DTO
+
     private RoomResponseDTO convertToDTO(Room room) {
         RoomResponseDTO dto = new RoomResponseDTO();
         dto.setRoomId(room.getRoomId());
@@ -27,7 +28,6 @@ public class RoomService {
         return dto;
     }
 
-    // Add a room
     public RoomResponseDTO addRoom(RoomRequestDTO request) {
         Room room = new Room();
         room.setRoomNumber(request.getRoomNumber());
@@ -39,7 +39,7 @@ public class RoomService {
         return convertToDTO(saved);
     }
 
-    // Update room
+
     public RoomResponseDTO updateRoom(Long id, RoomRequestDTO request) {
         Room existing = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
@@ -54,12 +54,12 @@ public class RoomService {
         return convertToDTO(updated);
     }
 
-    // Delete room
-    public void deleteRoom(Long id) {
-        roomRepository.deleteById(id);
-    }
+  public void deleteRoom(Long id) {
+      Room room = roomRepository.findById(id)
+              .orElseThrow(() -> new NoSuchElementException("Room with ID " + id + " not found"));
+      roomRepository.delete(room);
+  }
 
-    // Get all rooms
     public List<RoomResponseDTO> getAllRooms() {
         return roomRepository.findAll()
                 .stream()
@@ -67,11 +67,28 @@ public class RoomService {
                 .collect(Collectors.toList());
     }
 
-    // Get available rooms
     public List<RoomResponseDTO> getAvailableRooms() {
         return roomRepository.findByAvailabilityStatus("Available")
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+//
+//    public void updateRoomStatus(Long roomId, String status,String updatedBy) {
+//        Room room = roomRepository.findById(roomId)
+//                .orElseThrow(() -> new RuntimeException("Room not found"));
+//        room.setAvailabilityStatus(status);
+//        roomRepository.save(room);
+//    }
+    public void updateRoomStatus(Long roomId, String status, String updatedBy) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        room.setAvailabilityStatus(status);
+        room.setUpdatedBy(updatedBy);
+
+        roomRepository.save(room);
+    }
+
+
 }

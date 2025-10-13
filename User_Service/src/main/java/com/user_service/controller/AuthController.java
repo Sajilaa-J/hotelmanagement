@@ -1,18 +1,17 @@
 package com.user_service.controller;
 //
+//import com.shared_persistence.entity.User;
 //import com.user_service.dto.AuthRequest;
 //import com.user_service.dto.AuthResponse;
-//import com.shared_persistence.entity.User;
 //import com.user_service.dto.LoginRequest;
 //import com.user_service.repo.UserRepository;
 //import com.user_service.security.JwtUtil;
+//import com.user_service.assembler.UserModelAssembler;
 //import lombok.RequiredArgsConstructor;
+//import org.springframework.hateoas.EntityModel;
 //import org.springframework.http.ResponseEntity;
 //import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.web.bind.annotation.PostMapping;
-//import org.springframework.web.bind.annotation.RequestBody;
-//import org.springframework.web.bind.annotation.RequestMapping;
-//import org.springframework.web.bind.annotation.RestController;
+//import org.springframework.web.bind.annotation.*;
 //
 //@RestController
 //@RequestMapping("/api/auth")
@@ -22,12 +21,13 @@ package com.user_service.controller;
 //    private final UserRepository userRepository;
 //    private final PasswordEncoder passwordEncoder;
 //    private final JwtUtil jwtUtil;
+//    private final UserModelAssembler userModelAssembler;
 //
 //    @PostMapping("/register")
-//    public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest request) {
+//    public ResponseEntity<EntityModel<AuthResponse>> register(@RequestBody AuthRequest request) {
 //        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-//            return ResponseEntity.badRequest().body(new AuthResponse("Email already exists"));
-//
+//            AuthResponse response = new AuthResponse("Email already exists");
+//            return ResponseEntity.badRequest().body(userModelAssembler.toModel(response));
 //        }
 //
 //        User user = new User();
@@ -36,39 +36,51 @@ package com.user_service.controller;
 //        user.setPhone(request.getPhone());
 //        user.setPassword(passwordEncoder.encode(request.getPassword()));
 //        user.setRole("ADMIN".equalsIgnoreCase(request.getRole()) ? "ADMIN" : "USER");
-//
 //        userRepository.save(user);
 //
 //        String token = jwtUtil.generateToken(user);
-//        return ResponseEntity.ok(new AuthResponse(token, "User registered successfully"));
+//        AuthResponse response = new AuthResponse(token, "User registered successfully");
+//
+//        return ResponseEntity.ok(userModelAssembler.toModel(response));
 //    }
 //
 //    @PostMapping("/login")
-//    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+//    public ResponseEntity<EntityModel<AuthResponse>> login(@RequestBody LoginRequest request) {
 //        User user = userRepository.findByEmail(request.getEmail())
 //                .orElseThrow(() -> new RuntimeException("User not found"));
 //
 //        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-//            return ResponseEntity.badRequest().body(new AuthResponse("Invalid password"));
+//            AuthResponse response = new AuthResponse("Invalid password");
+//            return ResponseEntity.badRequest().body(userModelAssembler.toModel(response));
 //        }
 //
 //        String token = jwtUtil.generateToken(user);
-//        return ResponseEntity.ok(new AuthResponse(token, "Login successful"));
+//        AuthResponse response = new AuthResponse(token, "Login successful");
+//
+//        return ResponseEntity.ok(userModelAssembler.toModel(response));
 //    }
+//
+//
+//
 //}
 
+
 import com.shared_persistence.entity.User;
-import com.user_service.dto.AuthRequest;
-import com.user_service.dto.AuthResponse;
-import com.user_service.dto.LoginRequest;
+import com.user_service.dto.*;
 import com.user_service.repo.UserRepository;
 import com.user_service.security.JwtUtil;
 import com.user_service.assembler.UserModelAssembler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -79,6 +91,10 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final UserModelAssembler userModelAssembler;
+    private final JavaMailSender mailSender;
+
+
+    private final Map<String, String> otpStorage = new HashMap<>();
 
     @PostMapping("/register")
     public ResponseEntity<EntityModel<AuthResponse>> register(@RequestBody AuthRequest request) {
@@ -93,11 +109,11 @@ public class AuthController {
         user.setPhone(request.getPhone());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("ADMIN".equalsIgnoreCase(request.getRole()) ? "ADMIN" : "USER");
+
         userRepository.save(user);
 
         String token = jwtUtil.generateToken(user);
         AuthResponse response = new AuthResponse(token, "User registered successfully");
-
         return ResponseEntity.ok(userModelAssembler.toModel(response));
     }
 
@@ -107,13 +123,121 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            AuthResponse response = new AuthResponse("Invalid password");
+            AuthResponse response = new AuthResponse("Wrong password");
             return ResponseEntity.badRequest().body(userModelAssembler.toModel(response));
         }
 
         String token = jwtUtil.generateToken(user);
         AuthResponse response = new AuthResponse(token, "Login successful");
-
         return ResponseEntity.ok(userModelAssembler.toModel(response));
     }
+
+    @PutMapping("/update-email")
+    public ResponseEntity<EntityModel<AuthResponse>> updateEmail(
+            @RequestBody UpdateUserRequest request) {
+
+        Optional<User> optionalUser = userRepository.findByEmail(request.getOldEmail());
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(userModelAssembler.toModel(new AuthResponse("User not found")));
+        }
+
+        User user = optionalUser.get();
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest()
+                    .body(userModelAssembler.toModel(new AuthResponse("Wrong password")));
+        }
+
+        if (request.getNewEmail() != null && !request.getNewEmail().isEmpty()) {
+            if (userRepository.findByEmail(request.getNewEmail()).isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(userModelAssembler.toModel(new AuthResponse("Email already exists")));
+            }
+            user.setEmail(request.getNewEmail());
+        }
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(userModelAssembler.toModel(
+                new AuthResponse("Email updated successfully")));
+    }
+
+
+
+    @PutMapping("/change-password")
+    public ResponseEntity<EntityModel<AuthResponse>> changePassword(@RequestBody ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElse(null);
+
+        if (user == null) {
+            AuthResponse response = new AuthResponse("Email not found");
+            return ResponseEntity.badRequest().body(userModelAssembler.toModel(response));
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            AuthResponse response = new AuthResponse("Current password is incorrect");
+            return ResponseEntity.badRequest().body(userModelAssembler.toModel(response));
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        AuthResponse response = new AuthResponse("Password changed successfully");
+        return ResponseEntity.ok(userModelAssembler.toModel(response));
+    }
+    @DeleteMapping("/delete/{userId}")
+    public ResponseEntity<EntityModel<AuthResponse>> deleteUser(@PathVariable Long userId) {
+
+        Optional<User> userToDelete = userRepository.findById(userId);
+        if (userToDelete.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(userModelAssembler.toModel(new AuthResponse("User not found")));
+        }
+
+        userRepository.delete(userToDelete.get());
+        return ResponseEntity.ok(userModelAssembler.toModel(
+                new AuthResponse("User deleted successfully")));
+    }
+
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody PasswordResetRequest request) {
+        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+
+        String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
+        otpStorage.put(request.getEmail(), otp);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(request.getEmail());
+        message.setSubject("Password Reset OTP");
+        message.setText("Your OTP to reset password is: " + otp);
+        mailSender.send(message);
+
+        return ResponseEntity.ok("OTP sent to email");
+    }
+
+    @PutMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordUpdateRequest request) {
+        if (!otpStorage.containsKey(request.getEmail()) ||
+                !otpStorage.get(request.getEmail()).equals(request.getOtp())) {
+            return ResponseEntity.badRequest().body("Invalid OTP");
+        }
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        otpStorage.remove(request.getEmail());
+        return ResponseEntity.ok("Password updated successfully");
+    }
 }
+
+

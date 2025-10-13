@@ -21,13 +21,19 @@ public class BookingModelAssembler implements RepresentationModelAssembler<Booki
 
 
         model.add(linkTo(methodOn(AdminBookingController.class)
-                .updateBookingStatus(booking.getId(), "APPROVED")).withRel("update-status"));
+                .updateBookingStatus(booking.getId(), booking.getStatus())).withRel("update-status"));
         model.add(linkTo(methodOn(AdminBookingController.class)
                 .getAllBookings()).withRel("all-bookings"));
-
+        model.add(linkTo(methodOn(AdminBookingController.class)
+                .deleteBooking(booking.getId())).withRel("delete-booking"));
 
         model.add(linkTo(methodOn(UserBookingController.class)
                 .getUserBookings(booking.getUserId())).withRel("user-bookings"));
+        model.add(linkTo(methodOn(UserBookingController.class)
+                .updateBooking(booking.getId(), null)).withRel("update-booking"));
+        model.add(linkTo(methodOn(UserBookingController.class)
+                .cancelBooking(booking.getId())).withRel("cancel-booking"));
+
 
         return model;
     }

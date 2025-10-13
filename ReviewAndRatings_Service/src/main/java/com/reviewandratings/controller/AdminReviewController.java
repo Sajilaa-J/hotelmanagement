@@ -1,31 +1,38 @@
+
+
 //package com.reviewandratings.controller;
 //
+//import com.reviewandratings.assembler.ReviewModelAssembler;
 //import com.reviewandratings.dto.ReviewResponseDTO;
 //import com.reviewandratings.service.ReviewService;
-//import org.springframework.beans.factory.annotation.Autowired;
+//import lombok.RequiredArgsConstructor;
+//import org.springframework.hateoas.CollectionModel;
+//import org.springframework.hateoas.EntityModel;
+//import org.springframework.http.ResponseEntity;
 //import org.springframework.web.bind.annotation.*;
 //
 //import java.util.List;
 //
 //@RestController
 //@RequestMapping("/api/admin/reviews")
+//@RequiredArgsConstructor
 //public class AdminReviewController {
 //
-//    @Autowired
-//    private ReviewService reviewService;
+//    private final ReviewService reviewService;
+//    private final ReviewModelAssembler reviewAssembler;
 //
 //    @GetMapping
-//    public List<ReviewResponseDTO> getAllReviews() {
-//        return reviewService.getAllReviews(); // Service should return list of ReviewResponseDTO
+//    public ResponseEntity<CollectionModel<EntityModel<ReviewResponseDTO>>> getAllReviews() {
+//        List<ReviewResponseDTO> reviews = reviewService.getAllReviews();
+//        return ResponseEntity.ok(reviewAssembler.toCollectionModel(reviews, AdminReviewController.class, "getAllReviews"));
 //    }
 //
 //    @DeleteMapping("/{id}")
-//    public String deleteReview(@PathVariable Long id) {
-//        reviewService.deleteReview(id); // Service handles deletion logic
-//        return "Review with ID " + id + " has been deleted.";
+//    public ResponseEntity<EntityModel<ReviewResponseDTO>> deleteReview(@PathVariable Long id) {
+//        ReviewResponseDTO deletedReview = reviewService.deleteReview(id);
+//        return ResponseEntity.ok(reviewAssembler.toModel(deletedReview));
 //    }
 //}
-
 package com.reviewandratings.controller;
 
 import com.reviewandratings.assembler.ReviewModelAssembler;
@@ -38,6 +45,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/admin/reviews")
@@ -48,15 +56,31 @@ public class AdminReviewController {
     private final ReviewModelAssembler reviewAssembler;
 
     @GetMapping
-    public ResponseEntity<CollectionModel<EntityModel<ReviewResponseDTO>>> getAllReviews() {
-        List<ReviewResponseDTO> reviews = reviewService.getAllReviews();
-        return ResponseEntity.ok(reviewAssembler.toCollectionModel(reviews, AdminReviewController.class, "getAllReviews"));
+    public ResponseEntity<?> getAllReviews() {
+        try {
+            List<ReviewResponseDTO> reviews = reviewService.getAllReviews();
+            if (reviews.isEmpty()) {
+                return ResponseEntity.ok("No reviews found");
+            }
+            return ResponseEntity.ok(
+                    reviewAssembler.toCollectionModel(reviews, AdminReviewController.class, "getAllReviews")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error retrieving reviews: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<EntityModel<ReviewResponseDTO>> deleteReview(@PathVariable Long id) {
-        ReviewResponseDTO deletedReview = reviewService.deleteReview(id);
-        return ResponseEntity.ok(reviewAssembler.toModel(deletedReview));
+    public ResponseEntity<?> deleteReview(@PathVariable Long id) {
+        try {
+            reviewService.deleteReview(id);
+            return ResponseEntity.ok("Review with ID " + id + " deleted successfully.");
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.badRequest().body("Error: Review with ID " + id + " not found");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting review: " + e.getMessage());
+        }
     }
+
 }
 

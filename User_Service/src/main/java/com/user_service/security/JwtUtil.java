@@ -118,6 +118,15 @@ public class JwtUtil {
                 .get("role", String.class);
     }
 
+    public String extractUsername(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("name", String.class);
+    }
+
     public boolean isTokenValid(String token) {
         try {
             Jwts.parserBuilder()

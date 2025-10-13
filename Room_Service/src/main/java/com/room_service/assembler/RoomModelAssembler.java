@@ -20,10 +20,15 @@ public class RoomModelAssembler implements RepresentationModelAssembler<RoomResp
     public EntityModel<RoomResponseDTO> toModel(RoomResponseDTO room) {
         EntityModel<RoomResponseDTO> model = EntityModel.of(room);
 
+        model.add(linkTo(methodOn(AdminRoomController.class).addRoom(null)).withRel("add-room"));
         model.add(linkTo(methodOn(AdminRoomController.class).updateRoom(room.getRoomId(), null)).withRel("update-room"));
         model.add(linkTo(methodOn(AdminRoomController.class).deleteRoom(room.getRoomId())).withRel("delete-room"));
-        model.add(linkTo(methodOn(UserRoomController.class).getAllRooms()).withRel("all-rooms"));
-        model.add(linkTo(methodOn(UserRoomController.class).getAvailableRooms()).withRel("available-rooms"));
+        model.add(linkTo(methodOn(AdminRoomController.class).getAllRooms()).withRel("all-rooms"));
+        model.add(linkTo(methodOn(AdminRoomController.class).getAvailableRooms()).withRel("available-rooms"));
+
+
+        model.add(linkTo(methodOn(UserRoomController.class).getAllRooms()).withRel("user-all-rooms"));
+        model.add(linkTo(methodOn(UserRoomController.class).getAvailableRooms()).withRel("user-available-rooms"));
 
         return model;
     }

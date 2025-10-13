@@ -17,6 +17,12 @@ public class UserModelAssembler implements RepresentationModelAssembler<AuthResp
         EntityModel<AuthResponse> model = EntityModel.of(response);
         model.add(linkTo(methodOn(AuthController.class).register(null)).withRel("register"));
         model.add(linkTo(methodOn(AuthController.class).login(null)).withRel("login"));
+        model.add(linkTo(methodOn(AuthController.class).updateEmail(null)).withRel("updateEmail"));
+        model.add(linkTo(methodOn(AuthController.class).changePassword(null)).withRel("changePassword"));
+        model.add(linkTo(methodOn(AuthController.class).deleteUser(0L)).withRel("deleteUser"));
+        model.add(linkTo(methodOn(AuthController.class).forgotPassword(null)).withRel("forgotPassword"));
+        model.add(linkTo(methodOn(AuthController.class).resetPassword(null)).withRel("resetPassword"));
+
         return model;
     }
 

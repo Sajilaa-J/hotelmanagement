@@ -21,17 +21,25 @@ public class PaymentModelAssembler implements RepresentationModelAssembler<Payme
         EntityModel<PaymentResponseDTO> model = EntityModel.of(payment);
 
 
-        model.add(linkTo(methodOn(PaymentController.class).makePayment(null)).withRel("make-payment"));
-       // model.add(linkTo(methodOn(PaymentController.class).getAllPayments()).withRel("all-payments"));
+        model.add(linkTo(methodOn(PaymentController.class)
+                .makePayment(null)).withRel("make-payment"));
+        model.add(linkTo(methodOn(PaymentController.class)
+                .getPaymentsByUser(payment.getUserId())).withRel("user-payments"));
+        model.add(linkTo(methodOn(PaymentController.class)
+                .deletePayment(payment.getUserId(), payment.getId())).withRel("delete-payment"));
+
+
+        model.add(linkTo(methodOn(PaymentController.class)
+                .getAllPayments()).withRel("all-payments"));
 
         return model;
     }
 
-//    public CollectionModel<EntityModel<PaymentResponseDTO>> toCollectionModel(List<PaymentResponseDTO> payments) {
-//        List<EntityModel<PaymentResponseDTO>> paymentModels = payments.stream()
-//                .map(this::toModel)
-//                .collect(Collectors.toList());
-//
-//        return CollectionModel.of(paymentModels, linkTo(methodOn(PaymentController.class).getAllPayments()).withSelfRel());
-//    }
+    public CollectionModel<EntityModel<PaymentResponseDTO>> toCollectionModel(List<PaymentResponseDTO> payments) {
+        List<EntityModel<PaymentResponseDTO>> paymentModels = payments.stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+
+        return CollectionModel.of(paymentModels);
+    }
 }

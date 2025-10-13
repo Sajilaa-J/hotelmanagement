@@ -14,7 +14,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
         "com.room_service"
 })
 @EntityScan(basePackages = "com.shared_persistence.entity")
-@EnableFeignClients(basePackages = "com.room_service.client")
+@EnableFeignClients
 public class RoomServiceApplication {
 
     public static void main(String[] args) {

@@ -24,11 +24,11 @@ public class Review {
     @JoinColumn(name = "roomId", nullable = false)
     private Room room;
 
-    @ManyToOne
-    @JoinColumn(name = "id")
-    private Booking booking;
+//    @ManyToOne
+//    @JoinColumn(name = "id")
+//    private Booking booking;
 
-    private int rating; // 1–5
+    private int rating;
     private String comment;
     private LocalDateTime createdAt = LocalDateTime.now();
 }

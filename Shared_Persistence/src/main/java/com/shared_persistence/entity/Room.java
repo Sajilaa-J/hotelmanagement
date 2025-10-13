@@ -22,6 +22,7 @@ public class Room {
     private double price;
     private String availabilityStatus; // Available / Booked
     private String description;
+    private String updatedBy;
 
     @ManyToOne
     @JoinColumn(name = "userId")

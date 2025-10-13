@@ -19,10 +19,13 @@ public class ReviewModelAssembler implements RepresentationModelAssembler<Review
     @Override
     public EntityModel<ReviewResponseDTO> toModel(ReviewResponseDTO review) {
         EntityModel<ReviewResponseDTO> model = EntityModel.of(review);
-        model.add(linkTo(methodOn(AdminReviewController.class).deleteReview(review.getId())).withRel("delete-review"));
-        model.add(linkTo(methodOn(AdminReviewController.class).getAllReviews()).withRel("all-reviews"));
-        model.add(linkTo(methodOn(UserReviewController.class).getReviewsByRoom(review.getRoomId())).withRel("room-reviews"));
+        model.add(linkTo(methodOn(AdminReviewController.class)
+                .deleteReview(review.getId())).withRel("delete-review"));
+        model.add(linkTo(methodOn(AdminReviewController.class)
+                .getAllReviews()).withRel("all-reviews"));
 
+        model.add(linkTo(methodOn(UserReviewController.class)
+                .getReviewsByRoom(review.getRoomId())).withRel("room-reviews"));
         return model;
     }
 
