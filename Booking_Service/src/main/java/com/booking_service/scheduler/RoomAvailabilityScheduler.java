@@ -1,5 +1,6 @@
 package com.booking_service.scheduler;
 
+import com.booking_service.kafka.BookingProducer;
 import com.shared_persistence.entity.Booking;
 import com.shared_persistence.entity.Room;
 import com.shared_persistence.repo.BookingRepository;
@@ -16,54 +17,65 @@ public class RoomAvailabilityScheduler {
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
+    private final BookingProducer bookingProducer;
 
-    public RoomAvailabilityScheduler(BookingRepository bookingRepository, RoomRepository roomRepository) {
+    public RoomAvailabilityScheduler(BookingRepository bookingRepository, RoomRepository roomRepository, BookingProducer bookingProducer) {
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
+        this.bookingProducer = bookingProducer;
     }
-
-    // Runs every day at 00:00
-    //@Scheduled(cron = "0 0 0 * * ?")
-//    @Scheduled(cron = "0 0 0 * * ?")
-//    @Scheduled(cron = "*/5 * * * * *")  // every 5 seconds
+    //@Scheduled(cron = "*/5 * * * * *") // every 5 sec
+//    @Scheduled(cron = "0 0 * * * *")
 //    @Transactional
 //    public void updateExpiredBookings() {
 //        LocalDate today = LocalDate.now();
+//        System.out.println("Scheduler running at: " + today);
 //
-//        // Fetch all bookings that have ended
+//
 //        List<Booking> expiredBookings = bookingRepository.findByCheckOutDateBefore(today);
-//
+//        System.out.println("Expired bookings found: " + expiredBookings.size());
 //
 //        for (Booking booking : expiredBookings) {
-//            Room room = booking.getRoom(); // get the room from booking
-//            if (room != null && "Booked".equalsIgnoreCase(room.getAvailabilityStatus())) {
-//                room.setAvailabilityStatus("Available");
-//                roomRepository.save(room);
+//            Room room = booking.getRoom();
+//            if (room != null) {
+//                System.out.println("Room: " + room.getRoomNumber() + " current status: " + room.getAvailabilityStatus());
+//
+//
+//                if ("Booked".equalsIgnoreCase(room.getAvailabilityStatus())) {
+//                    room.setAvailabilityStatus("Available");
+//                    roomRepository.save(room); // must save
+//                    System.out.println("Room " + room.getRoomNumber() + " set to Available");
+//                }
+//
+//
+//                booking.setStatus("COMPLETED");
+//                bookingRepository.save(booking);
 //            }
 //        }
 //    }
-    @Scheduled(cron = "*/5 * * * * *") // every 5 sec
-    @Transactional
-    public void updateExpiredBookings() {
-        LocalDate today = LocalDate.now();
-        System.out.println("Scheduler running at: " + today);
 
+    //@Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "*/5 * * * * *")
+    @Transactional
+    public void releaseExpiredBookings() {
+        LocalDate today = LocalDate.now();
         List<Booking> expiredBookings = bookingRepository.findByCheckOutDateBefore(today);
-        System.out.println("Expired bookings found: " + expiredBookings.size());
+
+        System.out.println("Scheduler running at: " + today + ", expired bookings: " + expiredBookings.size());
 
         for (Booking booking : expiredBookings) {
-            Room room = booking.getRoom();
-            if (room != null) {
-                System.out.println("Room: " + room.getRoomNumber() + " current status: " + room.getAvailabilityStatus());
-                if ("Booked".equalsIgnoreCase(room.getAvailabilityStatus())) {
-                    room.setAvailabilityStatus("Available");
-                    roomRepository.save(room);
-                    System.out.println("Room " + room.getRoomNumber() + " set to Available");
-                }
-            }
+            bookingProducer.sendRoomReleasedEvent(booking.getRoom().getRoomId());
+
+
+
+
+
+            booking.setStatus("COMPLETED");
+            bookingRepository.save(booking);
+
+            System.out.println("✅ Released room ID: " + booking.getRoom().getRoomId());
         }
     }
-
 
 }
 

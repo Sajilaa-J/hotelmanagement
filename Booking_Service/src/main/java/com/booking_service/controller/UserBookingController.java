@@ -39,12 +39,14 @@ package com.booking_service.controller;
 import com.booking_service.assembler.BookingModelAssembler;
 import com.booking_service.dto.BookingRequestDTO;
 import com.booking_service.dto.BookingResponseDTO;
+import com.booking_service.kafka.BookingProducer;
 import com.booking_service.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -57,10 +59,17 @@ public class UserBookingController {
     private final BookingService bookingService;
     private final BookingModelAssembler bookingAssembler;
 
+    private final BookingProducer bookingProducer;
+
+
     @PostMapping
     public ResponseEntity<?> create(@RequestBody BookingRequestDTO req) {
         try {
             BookingResponseDTO resp = bookingService.createBooking(req);
+//            String message = "RoomBooked:" + req.getRoomId()+ " By User:" + req.getUserId();
+//            bookingProducer.sendBookingEvent(message);
+
+            bookingProducer.sendBookingEvent(req.getRoomId(), req.getUserId());
             return ResponseEntity.ok(bookingAssembler.toModel(resp));
         } catch (NoSuchElementException e) {
             return ResponseEntity.badRequest()

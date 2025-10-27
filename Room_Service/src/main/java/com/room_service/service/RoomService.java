@@ -1,8 +1,10 @@
 package com.room_service.service;
 import com.room_service.dto.RoomRequestDTO;
 import com.room_service.dto.RoomResponseDTO;
-import com.room_service.repo.RoomRepository;
+
 import com.shared_persistence.entity.Room;
+import com.shared_persistence.repo.RoomRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -54,11 +56,11 @@ public class RoomService {
         return convertToDTO(updated);
     }
 
-  public void deleteRoom(Long id) {
-      Room room = roomRepository.findById(id)
-              .orElseThrow(() -> new NoSuchElementException("Room with ID " + id + " not found"));
-      roomRepository.delete(room);
-  }
+    public void deleteRoom(Long id) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Room with ID " + id + " not found"));
+        roomRepository.delete(room);
+    }
 
     public List<RoomResponseDTO> getAllRooms() {
         return roomRepository.findAll()
@@ -80,15 +82,28 @@ public class RoomService {
 //        room.setAvailabilityStatus(status);
 //        roomRepository.save(room);
 //    }
+//    public void updateRoomStatus(Long roomId, String status, String updatedBy) {
+//        Room room = roomRepository.findById(roomId)
+//                .orElseThrow(() -> new RuntimeException("Room not found"));
+//
+//        room.setAvailabilityStatus(status);
+//        room.setUpdatedBy(updatedBy);
+//
+//        roomRepository.save(room);
+//    }
+
+    @Transactional
     public void updateRoomStatus(Long roomId, String status, String updatedBy) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
+        if ("Booked".equalsIgnoreCase(status)) {
+//            room.setAvailabilityStatus(status);
+//            roomRepository.save(room);
+            room.setAvailabilityStatus("Available");
+            room.setUpdatedBy("System");
+            roomRepository.save(room);
+        }
 
-        room.setAvailabilityStatus(status);
-        room.setUpdatedBy(updatedBy);
 
-        roomRepository.save(room);
     }
-
-
 }

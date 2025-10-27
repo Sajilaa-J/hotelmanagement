@@ -67,6 +67,7 @@ package com.user_service.controller;
 
 import com.shared_persistence.entity.User;
 import com.user_service.dto.*;
+import com.user_service.kafka.UserProducer;
 import com.user_service.repo.UserRepository;
 import com.user_service.security.JwtUtil;
 import com.user_service.assembler.UserModelAssembler;
@@ -92,6 +93,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserModelAssembler userModelAssembler;
     private final JavaMailSender mailSender;
+    private final UserProducer userProducer;
 
 
     private final Map<String, String> otpStorage = new HashMap<>();
@@ -112,6 +114,9 @@ public class AuthController {
 
         userRepository.save(user);
 
+        userProducer.sendUserCreatedEvent(user.getName(), user.getEmail());
+
+        //return ResponseEntity.ok("✅ User created: " + user.getName() + " (" + user.getEmail() + ")");
         String token = jwtUtil.generateToken(user);
         AuthResponse response = new AuthResponse(token, "User registered successfully");
         return ResponseEntity.ok(userModelAssembler.toModel(response));

@@ -37,7 +37,7 @@ public class Payment {
 
     private LocalDateTime paymentDate = LocalDateTime.now();
     private double amount;
-    private String paymentStatus; // Paid, Pending, Failed
+    private String paymentStatus;
 
 }
 

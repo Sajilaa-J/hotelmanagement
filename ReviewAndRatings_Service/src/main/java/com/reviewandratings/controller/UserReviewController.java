@@ -39,6 +39,7 @@ package com.reviewandratings.controller;
 import com.reviewandratings.assembler.ReviewModelAssembler;
 import com.reviewandratings.dto.ReviewRequestDTO;
 import com.reviewandratings.dto.ReviewResponseDTO;
+import com.reviewandratings.kafka.ReviewProducer;
 import com.reviewandratings.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
@@ -56,11 +57,13 @@ public class UserReviewController {
 
     private final ReviewService reviewService;
     private final ReviewModelAssembler reviewAssembler;
+    private final ReviewProducer reviewProducer;
 
     @PostMapping
     public ResponseEntity<?> addReview(@RequestBody ReviewRequestDTO dto) {
         try {
             ReviewResponseDTO review = reviewService.addReview(dto);
+            reviewProducer.sendReviewEvent(review);
             return ResponseEntity.ok(reviewAssembler.toModel(review));
         } catch (NoSuchElementException e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());

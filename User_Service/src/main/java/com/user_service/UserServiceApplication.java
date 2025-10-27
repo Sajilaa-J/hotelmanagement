@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication
 @EntityScan(basePackages = {"com.shared_persistence.entity"})
 //@EnableJpaRepositories(basePackages = {"com.shared_persistence"})
-@ComponentScan(basePackages = {"com.user_service", "com.shared_persistence"})
+//@ComponentScan(basePackages = {"com.user_service", "com.shared_persistence"})
 public class UserServiceApplication {
 
     public static void main(String[] args) {

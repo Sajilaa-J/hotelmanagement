@@ -4,6 +4,7 @@ package com.payment_service.service;
 
 import com.payment_service.dto.PaymentRequestDTO;
 import com.payment_service.dto.PaymentResponseDTO;
+import com.payment_service.kafka.PaymentProducer;
 import com.shared_persistence.entity.Payment;
 import com.shared_persistence.entity.Room;
 import com.shared_persistence.entity.User;
@@ -37,6 +38,9 @@ public class PaymentService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private PaymentProducer paymentProducer;
+
     public PaymentResponseDTO makePayment(PaymentRequestDTO request) {
 
 
@@ -66,6 +70,10 @@ public class PaymentService {
         payment.setPaymentDate(LocalDateTime.now());
 
         Payment savedPayment = paymentRepository.save(payment);
+        String message = "Payment successful for Booking ID: " + booking.getId() +
+                ", User: " + user.getName() +
+                ", Amount: " + savedPayment.getAmount();
+        paymentProducer.sendPaymentMessage(message);
 
         emailService.sendPaymentSuccessMail(
                 user.getEmail(),
@@ -75,11 +83,20 @@ public class PaymentService {
         );
 
         return PaymentResponseDTO.builder()
-                //.paymentId(savedPayment.getPaymentId())
-                .paymentStatus(savedPayment.getPaymentStatus())
+                .id(savedPayment.getPaymentId())
+                .userId(savedPayment.getUser().getUserId())
+                .bookingId(savedPayment.getBooking().getId())
                 .amount(savedPayment.getAmount())
+                .paymentStatus(savedPayment.getPaymentStatus())
                 .paymentDate(savedPayment.getPaymentDate())
                 .build();
+
+//        return PaymentResponseDTO.builder()
+//                //.paymentId(savedPayment.getPaymentId())
+//                .paymentStatus(savedPayment.getPaymentStatus())
+//                .amount(savedPayment.getAmount())
+//                .paymentDate(savedPayment.getPaymentDate())
+//                .build();
     }
 
     public List<PaymentResponseDTO> getPaymentsByUser(Long userId) {

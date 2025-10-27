@@ -3,10 +3,12 @@ package com.booking_service.service;
 import com.booking_service.client.RoomClient;
 import com.booking_service.dto.BookingRequestDTO;
 import com.booking_service.dto.BookingResponseDTO;
+import com.booking_service.kafka.BookingProducer;
 import com.shared_persistence.entity.Booking;
 import com.shared_persistence.entity.Room;
 import com.shared_persistence.entity.User;
 import com.shared_persistence.repo.BookingRepository;
+import com.shared_persistence.repo.BookingRepositoryCustom;
 import com.shared_persistence.repo.RoomRepository;
 import com.shared_persistence.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,22 +33,24 @@ public class BookingService {
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
     private final RoomClient roomClient;
-
+    private final BookingProducer bookingProducer;
+    private final BookingRepositoryCustom bookingRepositoryCustom;
     @Autowired
     public BookingService(
             BookingRepository bookingRepository,
             UserRepository userRepository,
             RoomRepository roomRepository,
             RoomClient roomClient,
-            @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor
+            @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor, BookingProducer bookingProducer, BookingRepositoryCustom bookingRepositoryCustom
     ) {
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
         this.roomClient = roomClient;
         this.taskExecutor = taskExecutor;
+        this.bookingProducer = bookingProducer;
+        this.bookingRepositoryCustom = bookingRepositoryCustom;
     }
-
 
     public BookingResponseDTO createBooking(BookingRequestDTO req) {
         User user = userRepository.findById(req.getUserId())
@@ -55,26 +59,75 @@ public class BookingService {
         Room room = roomRepository.findById(req.getRoomId())
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
+        if (!"Available".equalsIgnoreCase(room.getAvailabilityStatus())) {
+            throw new RuntimeException("Room not available");
+        }
+
+        // Update room status to booked
+           room.setAvailabilityStatus("Booked");
+        roomRepository.save(room);
+//        if ("BOOKED".equalsIgnoreCase(room.getAvailabilityStatus())) {
+//            throw new RuntimeException("Room is not available for this date!");
+//        }
+        boolean overlapExists =bookingRepositoryCustom.existsByRoomAndDateRange(
+                room,
+                req.getCheckInDate(),
+                req.getCheckOutDate()
+        );
+
+        if (overlapExists) {
+            throw new RuntimeException("Room is not available for this date!");
+        }
 
         Booking booking = new Booking();
         booking.setCheckInDate(req.getCheckInDate());
         booking.setCheckOutDate(req.getCheckOutDate());
         booking.setTotalAmount(req.getTotalAmount());
-        booking.setStatus("PENDING");
-
+        booking.setStatus("BOOKED");
         booking.setRoom(room);
         booking.setUser(user);
 
-        //roomClient.updateRoomStatus(req.getRoomId(), "BOOKED");
-//        roomClient.updateRoomStatus(req.getRoomId(), "BOOKED");
-        roomClient.updateRoomStatus(req.getRoomId(), "BOOKED","SYSTEM");
-
-
-
-
         Booking saved = bookingRepository.save(booking);
+
+       // roomClient.updateRoomStatus(req.getRoomId(), "BOOKED", "SYSTEM");
+        // Send Kafka message
+//        String message = "RoomBooked:" + req.getRoomId();
+//        bookingProducer.sendBookingEvent(message);
+
+        bookingProducer.sendBookingEvent(req.getRoomId(), req.getUserId());
+
         return mapToResponse(saved);
     }
+
+
+
+//    public BookingResponseDTO createBooking(BookingRequestDTO req) {
+//        User user = userRepository.findById(req.getUserId())
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        Room room = roomRepository.findById(req.getRoomId())
+//                .orElseThrow(() -> new RuntimeException("Room not found"));
+//
+//
+//        Booking booking = new Booking();
+//        booking.setCheckInDate(req.getCheckInDate());
+//        booking.setCheckOutDate(req.getCheckOutDate());
+//        booking.setTotalAmount(req.getTotalAmount());
+//        booking.setStatus("PENDING");
+//
+//        booking.setRoom(room);
+//        booking.setUser(user);
+//
+//        //roomClient.updateRoomStatus(req.getRoomId(), "BOOKED");
+////        roomClient.updateRoomStatus(req.getRoomId(), "BOOKED");
+//        roomClient.updateRoomStatus(req.getRoomId(), "BOOKED","SYSTEM");
+//
+//
+//
+//
+//        Booking saved = bookingRepository.save(booking);
+//        return mapToResponse(saved);
+//    }
 
     public List<BookingResponseDTO> getBookingsByUser(Long userId) {
         User user = userRepository.findById(userId)
