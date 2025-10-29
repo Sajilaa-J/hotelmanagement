@@ -8,15 +8,16 @@ import com.shared_persistence.entity.Booking;
 import com.shared_persistence.entity.Room;
 import com.shared_persistence.entity.User;
 import com.shared_persistence.repo.BookingRepository;
-import com.shared_persistence.repo.BookingRepositoryCustom;
 import com.shared_persistence.repo.RoomRepository;
 import com.shared_persistence.repo.UserRepository;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -34,14 +35,14 @@ public class BookingService {
     private final RoomRepository roomRepository;
     private final RoomClient roomClient;
     private final BookingProducer bookingProducer;
-    private final BookingRepositoryCustom bookingRepositoryCustom;
+    //private final BookingRepositoryCustom bookingRepositoryCustom;
     @Autowired
     public BookingService(
             BookingRepository bookingRepository,
             UserRepository userRepository,
             RoomRepository roomRepository,
             RoomClient roomClient,
-            @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor, BookingProducer bookingProducer, BookingRepositoryCustom bookingRepositoryCustom
+            @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor, BookingProducer bookingProducer
     ) {
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
@@ -49,7 +50,7 @@ public class BookingService {
         this.roomClient = roomClient;
         this.taskExecutor = taskExecutor;
         this.bookingProducer = bookingProducer;
-        this.bookingRepositoryCustom = bookingRepositoryCustom;
+        //this.bookingRepositoryCustom = bookingRepositoryCustom;
     }
 
     public BookingResponseDTO createBooking(BookingRequestDTO req) {
@@ -59,9 +60,9 @@ public class BookingService {
         Room room = roomRepository.findById(req.getRoomId())
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
-        if (!"Available".equalsIgnoreCase(room.getAvailabilityStatus())) {
-            throw new RuntimeException("Room not available");
-        }
+//        if (!"Available".equalsIgnoreCase(room.getAvailabilityStatus())) {
+//            throw new RuntimeException("Room not available");
+//        }
 
         // Update room status to booked
            room.setAvailabilityStatus("Booked");
@@ -69,14 +70,34 @@ public class BookingService {
 //        if ("BOOKED".equalsIgnoreCase(room.getAvailabilityStatus())) {
 //            throw new RuntimeException("Room is not available for this date!");
 //        }
-        boolean overlapExists =bookingRepositoryCustom.existsByRoomAndDateRange(
-                room,
-                req.getCheckInDate(),
-                req.getCheckOutDate()
-        );
+//        boolean overlapExists =bookingRepositoryCustom.existsByRoomAndDateRange(
+//                room,
+//                req.getCheckInDate(),
+//                req.getCheckOutDate()
+//        );
+
+        boolean overlapExists = bookingRepository.findAll((root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("room"), room));
+            predicates.add(
+                    cb.and(
+                            cb.lessThanOrEqualTo(root.get("checkInDate"), req.getCheckOutDate()),
+                            cb.greaterThanOrEqualTo(root.get("checkOutDate"), req.getCheckInDate())
+                    )
+            );
+            return cb.and(predicates.toArray(new Predicate[0]));
+        }).stream().findAny().isPresent();
+
+
+        System.out.println("Overlap Exists? " + overlapExists);
+//        if (overlapExists) {
+//            throw new RuntimeException("Room is not available for this date!");
+//        }
 
         if (overlapExists) {
             throw new RuntimeException("Room is not available for this date!");
+        } else {
+            System.out.println("Room is available!");
         }
 
         Booking booking = new Booking();

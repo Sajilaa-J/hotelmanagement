@@ -54,8 +54,8 @@ public class RoomAvailabilityScheduler {
 //        }
 //    }
 
-    //@Scheduled(cron = "0 0 * * * *")
-    @Scheduled(cron = "*/5 * * * * *")
+    @Scheduled(cron = "0 0 * * * *")
+   // @Scheduled(cron = "*/5 * * * * *")
     @Transactional
     public void releaseExpiredBookings() {
         LocalDate today = LocalDate.now();

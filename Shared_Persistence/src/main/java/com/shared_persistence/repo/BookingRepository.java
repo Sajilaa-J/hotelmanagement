@@ -10,6 +10,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,13 +21,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface BookingRepository extends JpaRepository<Booking, Long> {
+public interface BookingRepository extends JpaRepository<Booking, Long> , JpaSpecificationExecutor<Booking> {
 
     List<Booking> findByUser(User user);
 
     Optional<Booking> findById(Long id);
 
     List<Booking> findByCheckOutDateBefore(LocalDate date);
+
+//    boolean existsByRoomAndDateRange(Room room, LocalDate checkInDate, LocalDate checkOutDate);
 
 
 //    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
