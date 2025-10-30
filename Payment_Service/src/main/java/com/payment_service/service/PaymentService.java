@@ -43,6 +43,8 @@ public class PaymentService {
 
     public PaymentResponseDTO makePayment(PaymentRequestDTO request) {
 
+        Booking booking = bookingRepository.findById(request.getId())
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         if (request.getId() == null) {
             throw new IllegalArgumentException("Booking ID (id) must not be null");
@@ -54,11 +56,18 @@ public class PaymentService {
             throw new IllegalArgumentException("Room ID must not be null");
         }
 
+        if (request.getAmount() == null || !request.getAmount().equals(booking.getTotalAmount())) {
+            throw new IllegalArgumentException(
+                    "Invalid payment amount. It must match the booking total: " + booking.getTotalAmount()
+            );
+        }
+
+
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new RuntimeException("Room not found"));
-        Booking booking = bookingRepository.findById(request.getId())
+         booking = bookingRepository.findById(request.getId())
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         Payment payment = new Payment();

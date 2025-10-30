@@ -71,13 +71,18 @@ import com.user_service.kafka.UserProducer;
 import com.user_service.repo.UserRepository;
 import com.user_service.security.JwtUtil;
 import com.user_service.assembler.UserModelAssembler;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -99,7 +104,7 @@ public class AuthController {
     private final Map<String, String> otpStorage = new HashMap<>();
 
     @PostMapping("/register")
-    public ResponseEntity<EntityModel<AuthResponse>> register(@RequestBody AuthRequest request) {
+    public ResponseEntity<EntityModel<AuthResponse>> register(@Valid @RequestBody AuthRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             AuthResponse response = new AuthResponse("Email already exists");
             return ResponseEntity.badRequest().body(userModelAssembler.toModel(response));
@@ -110,7 +115,13 @@ public class AuthController {
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole("ADMIN".equalsIgnoreCase(request.getRole()) ? "ADMIN" : "USER");
+        //user.setRole("ADMIN".equalsIgnoreCase(request.getRole()) ? "ADMIN" : "USER");
+
+        String role = request.getRole();
+        if (!"ADMIN".equalsIgnoreCase(role) && !"USER".equalsIgnoreCase(role)) {
+            throw new IllegalArgumentException("Role must be either ADMIN or USER");
+        }
+        user.setRole(role.toUpperCase());
 
         userRepository.save(user);
 
@@ -227,22 +238,86 @@ public class AuthController {
         return ResponseEntity.ok("OTP sent to email");
     }
 
+//    @PutMapping("/reset-password")
+//    public ResponseEntity<?> resetPassword(@RequestBody PasswordUpdateRequest request) {
+//        if (!otpStorage.containsKey(request.getEmail()) ||
+//                !otpStorage.get(request.getEmail()).equals(request.getOtp())) {
+//            return ResponseEntity.badRequest().body("Invalid OTP");
+//        }
+//
+//        User user = userRepository.findByEmail(request.getEmail())
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+//        userRepository.save(user);
+//
+//        otpStorage.remove(request.getEmail());
+//        return ResponseEntity.ok("Password updated successfully");
+//    }
+
+//    @PutMapping("/reset-password")
+//    @Transactional
+//    public ResponseEntity<?> resetPassword(@RequestBody PasswordUpdateRequest request) {
+//        try {
+//            // 1️⃣ Validate OTP
+//            String storedOtp = otpStorage.get(request.getEmail());
+//            if (storedOtp == null || !storedOtp.equals(request.getOtp())) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body(Map.of("error", "Invalid or expired OTP"));
+//            }
+//
+//            // 2️⃣ Validate new password
+//            if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body(Map.of("error", "New password cannot be empty"));
+//            }
+//
+//            // 3️⃣ Find user by email
+//            User user = userRepository.findByEmail(request.getEmail())
+//                    .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getEmail()));
+//
+//
+//
+//            // 4️⃣ Update password (encode it before saving)
+//            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+//            userRepository.save(user);
+//
+//            // 5️⃣ Remove OTP after successful reset
+//            otpStorage.remove(request.getEmail());
+//
+//            return ResponseEntity.ok(Map.of("message", "Password updated successfully"));
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("error", "Failed to reset password: " + e.getMessage()));
+//        }
+//    }
+
     @PutMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody PasswordUpdateRequest request) {
-        if (!otpStorage.containsKey(request.getEmail()) ||
-                !otpStorage.get(request.getEmail()).equals(request.getOtp())) {
+    public ResponseEntity<String> resetPassword(@RequestBody PasswordUpdateRequest request) {
+        String email = request.getEmail();
+
+        // Check OTP
+        if (!otpStorage.containsKey(email) ||
+                !otpStorage.get(email).equals(request.getOtp())) {
             return ResponseEntity.badRequest().body("Invalid OTP");
         }
 
-        User user = userRepository.findByEmail(request.getEmail())
+        // Find user
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Update encoded password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        otpStorage.remove(request.getEmail());
-        return ResponseEntity.ok("Password updated successfully");
+        // Remove used OTP
+        otpStorage.remove(email);
+
+        return ResponseEntity.ok("Password reset successful");
     }
+
+
 }
 
 

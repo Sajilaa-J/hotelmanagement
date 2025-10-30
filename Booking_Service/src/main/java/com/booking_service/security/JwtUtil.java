@@ -56,6 +56,16 @@ public class JwtUtil {
                 .getBody()
                 .get("role", String.class);
     }
+
+    public Long extractUserId(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId", Long.class);
+    }
+
 //    public String generateToken() {
 //        long nowMillis = System.currentTimeMillis();
 //        Date now = new Date(nowMillis);
@@ -84,6 +94,9 @@ public class JwtUtil {
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }
+
+
+
 
     public boolean isTokenValid(String token) {
         try {

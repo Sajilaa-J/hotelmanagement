@@ -37,10 +37,18 @@ public class SecurityConfig {
                 }))
 
                 .csrf(csrf -> csrf.disable())
+//                .exceptionHandling(ex -> ex
+//                        .authenticationEntryPoint((request, response, authException) ->
+//                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+//                )// Disable CSRF for APIs
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
-                )// Disable CSRF for APIs
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Invalid or expired token\"}");
+                        })
+                )
+
                 .authorizeHttpRequests(auth -> auth
 //                                .requestMatchers(
 //                                        "/v3/api-docs/**",

@@ -1,6 +1,8 @@
 package com.shared_persistence.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.util.List;
@@ -18,9 +20,21 @@ public class Room {
 
     //@Column(name = "room_number", unique = true, nullable = false)
     private String roomNumber;
-    private String type; // Single, Double, Suite
+    @NotBlank(message = "Room type is required")
+    @Pattern(
+            regexp = "^(Single|Double|Suite|Deluxe)$",
+            message = "Invalid room type. Allowed types: Single, Double, Suite, Deluxe"
+    )
+    private String type;
     private double price;
-    private String availabilityStatus; // Available / Booked
+
+
+    @NotBlank(message = "Availability status is required")
+    @Pattern(
+            regexp = "^(AVAILABLE|BOOKED)$",
+            message = "Invalid status. Only 'Available' or 'Booked' are allowed"
+    )
+    private String availabilityStatus;
     private String description;
     private String updatedBy;
 

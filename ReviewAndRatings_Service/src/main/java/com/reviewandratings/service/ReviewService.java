@@ -11,6 +11,7 @@ import com.shared_persistence.entity.Room;
 import com.shared_persistence.repo.ReviewRepository;
 import com.shared_persistence.repo.UserRepository;
 import com.shared_persistence.repo.RoomRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +31,7 @@ public class ReviewService {
     @Autowired
     private RoomRepository roomRepository;
 
-    public ReviewResponseDTO addReview(ReviewRequestDTO dto) {
+    public ReviewResponseDTO addReview(@Valid  ReviewRequestDTO dto) {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

@@ -4,10 +4,12 @@ import com.room_service.dto.RoomResponseDTO;
 
 import com.shared_persistence.entity.Room;
 import com.shared_persistence.repo.RoomRepository;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -104,6 +106,31 @@ public class RoomService {
             roomRepository.save(room);
         }
 
+
+    }
+
+    public List<Room> searchRooms(String type, Double minPrice, Double maxPrice, String status) {
+        return roomRepository.findAll((root, query, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (type != null && !type.isEmpty()) {
+                predicates.add(cb.equal(root.get("type"), type));
+            }
+            if (minPrice != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
+            }
+
+            if (maxPrice != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+
+            if (status != null && !status.isEmpty()) {
+                predicates.add(cb.equal(root.get("availabilityStatus"), status));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        });
 
     }
 }
